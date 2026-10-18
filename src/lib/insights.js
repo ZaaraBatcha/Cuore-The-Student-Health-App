@@ -1,4 +1,4 @@
-// Weekly insights — find patterns from the last 7 days of logs
+// Weekly insights: find patterns from the last 7 days of logs
 // Student-wellbeing focused: moods, activity, study, sleep patterns.
 
 import { todayKey } from './storage';
@@ -79,7 +79,7 @@ export function getWeeklyInsights(logs) {
   }
 
   const summary = `${recent.length} entries logged this week. ${
-    daysWithLogs >= 5 ? 'Strong consistency — keep it going.' : 'Try logging a little more often to see clearer patterns.'
+    daysWithLogs >= 5 ? 'Strong consistency: keep it going.' : 'Try logging a little more often to see clearer patterns.'
   }`;
 
   // Pattern Mirror

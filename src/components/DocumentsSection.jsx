@@ -5,8 +5,8 @@ const DOC_TYPES = [
   { id: 'prescription', label: 'Prescription', icon: '💊' },
   { id: 'letter', label: 'Letter', icon: '✉️' },
   { id: 'lab_result', label: 'Lab result', icon: '🧪' },
-  { id: 'imaging', label: 'Imaging / scan', icon: '🩻' },
-  { id: 'other', label: 'Other', icon: '📄' },
+  { id: 'imaging', label: 'Scan', icon: '🩻' },
+  { id: 'other', label: 'Note', icon: '📄' },
 ];
 
 export default function DocumentsSection() {
@@ -38,10 +38,10 @@ export default function DocumentsSection() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">📁</span>
           <div>
-            <div className="font-bold text-mint-900">Documents</div>
+            <div className="font-bold text-mint-900">My files</div>
             <div className="text-xs text-mint-700">
               {docs.length === 0
-                ? 'Prescriptions, letters & test results — all in one place.'
+                ? 'GP letters, lab reports: all in one place.'
                 : `${docs.length} document${docs.length === 1 ? '' : 's'} saved locally`}
             </div>
           </div>
@@ -57,8 +57,10 @@ export default function DocumentsSection() {
           className="w-full mt-2 px-4 py-6 rounded-xl border-2 border-dashed border-mint-300 bg-white/60 text-mint-700 hover:bg-white transition-colors"
         >
           <div className="text-3xl mb-1">📷</div>
-          <div className="font-medium">Scan or upload a prescription</div>
-          <div className="text-xs mt-1 text-mint-600">Camera, photo library, or PDF — up to a few MB</div>
+          <div className="font-medium">Scan or upload a document</div>
+          <div className="text-xs mt-1 text-mint-600">
+            GP letters (e.g. for uni extenuating-circumstances forms), lab reports, or PDFs
+          </div>
         </button>
       )}
 
@@ -207,7 +209,7 @@ function AddDocumentForm({ onClose, onSaved }) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Metformin prescription March 2026"
+              placeholder="e.g. GP letter March 2026"
               className="input"
               autoFocus
             />

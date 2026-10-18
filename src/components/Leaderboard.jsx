@@ -1,128 +1,78 @@
-import { useEffect, useState } from 'react';
-import { rankedToday, getLeaderboard } from '../lib/leaderboard';
+import { useState } from 'react';
+import { rankedToday } from '../lib/leaderboard';
 import { DAILY_STEP_GOAL } from '../lib/steps';
 
+// Compact social card: collapsed shows one summary line; tapping expands
+// the top three plus your own row (per design review).
 export default function Leaderboard() {
-  const [ranked, setRanked] = useState(() => rankedToday());
-
-  // Refresh when other components might have updated profile data
-  useEffect(() => {
-    const id = setInterval(() => setRanked(rankedToday()), 3000);
-    return () => clearInterval(id);
-  }, []);
+  const [expanded, setExpanded] = useState(false);
+  const ranked = rankedToday();
+  const me = ranked.find((p) => p.isMe);
+  const ahead = ranked.filter((p) => p.rank < (me ? me.rank : Infinity));
+  const gapToNext = me && ahead.length > 0 ? ahead[ahead.length - 1].todaySteps - me.todaySteps : null;
 
   return (
-    <div className="card-mint mb-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="card-mint mb-4 overflow-hidden">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between text-left px-1"
+      >
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-xl">🏆</div>
+          <span className="text-xl">🏆</span>
           <div>
-            <div className="font-bold text-mint-900">Leaderboard</div>
-            <div className="text-xs text-mint-700">Today's steps · this device</div>
+            <div className="font-bold text-mint-900 text-sm">Leaderboard</div>
+            <div className="text-xs text-mint-700">See how you're doing against friends</div>
           </div>
         </div>
-      </div>
+        <span className={`text-mint-600 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
+      </button>
 
-      <div className="space-y-3">
-        {ranked.map((p) => (
-          <LeaderboardRow key={p.id} profile={p} />
-        ))}
-      </div>
+      {/* Collapsed: one honest summary line */}
+      {!expanded && me && (
+        <div className="mt-2.5 flex flex-wrap items-baseline gap-x-1.5 text-sm">
+          <span className="font-bold text-mint-800">#{me.rank}</span>
+          <span className="text-mint-700 font-medium">{me.name}</span>
+          <span className="text-mint-600">
+            · {me.todaySteps.toLocaleString()} steps
+            {gapToNext !== null && gapToNext > 0 && ` · ${(gapToNext + 1).toLocaleString()} to climb`}
+          </span>
+        </div>
+      )}
 
-      <p className="text-xs text-mint-500 mt-3 text-center leading-relaxed">
-        Demo leaderboard · profiles share this device. In a full version, profiles would sync to a server.
-      </p>
+      {/* Expanded: top three + your row, mini gardens included */}
+      {expanded && (
+        <div className="space-y-2 mt-3">
+          {ranked.map((p) => <Row key={p.id} profile={p} />)}
+          <p className="text-xs text-mint-600 mt-2 text-center leading-relaxed">
+            Profiles share this device for now. A server version comes next.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function LeaderboardRow({ profile }) {
+function Row({ profile }) {
   const pct = Math.min(100, Math.round((profile.todaySteps / DAILY_STEP_GOAL) * 100));
-  const waterPct = Math.min(100, Math.round((profile.todayWater / 2000) * 100));
-  const rankEmoji = profile.rank === 1 ? '🥇' : profile.rank === 2 ? '🥈' : profile.rank === 3 ? '🥉' : '  ';
-
+  const medal = profile.rank === 1 ? '🥇' : profile.rank === 2 ? '🥈' : profile.rank === 3 ? '🥉' : '#';
   return (
-    <div className={`relative rounded-full border-2 pl-4 pr-5 py-2.5 overflow-hidden shadow-sm ${
-      profile.isMe ? 'bg-gradient-to-r from-mint-100 to-white border-mint-400' : 'bg-white border-mint-200'
-    }`}>
-      {/* Water level fill — fills from bottom, capped by today's water % */}
-      <div
-        className="absolute bottom-0 left-0 right-0 transition-all duration-700 pointer-events-none"
-        style={{ height: `${waterPct}%`, background: 'linear-gradient(180deg, #bfdbfe 0%, #7bb392 100%)', opacity: 0.35 }}
-      />
-
-      <div className="relative flex items-center gap-3">
-        {/* Rank */}
-        <div className="w-8 text-center font-bold text-mint-700 text-sm flex-shrink-0">
-          {rankEmoji.trim() ? rankEmoji : `#${profile.rank}`}
-        </div>
-
-        {/* Avatar + name */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0"
-            style={{ backgroundColor: profile.color + '33' }}
-          >
-            {profile.emoji}
+    <div className={`rounded-2xl border px-3 py-2.5 ${profile.isMe ? 'bg-gradient-to-r from-mint-100 to-white border-mint-300' : 'bg-white border-mint-200'}`}>
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 text-center text-sm font-bold text-mint-700 flex-shrink-0">{medal}{profile.rank === 1 || profile.rank === 2 || profile.rank === 3 ? '' : profile.rank}</div>
+        <div className="text-lg flex-shrink-0" aria-hidden="true">{profile.emoji}</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-mint-900 truncate">
+            {profile.name}{profile.isMe && <span className="text-xs text-mint-600 font-normal"> (you)</span>}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-bold text-mint-900 text-sm truncate">
-              {profile.name}
-              {profile.isMe && <span className="ml-1 text-xs text-mint-600">(you)</span>}
-            </div>
-            <div className="text-xs text-mint-600">
-              <span className="font-semibold">{profile.todaySteps.toLocaleString()}</span> steps ·{' '}
-              <span className="font-semibold">{(profile.todayWater / 1000).toFixed(1)}L</span> water
-            </div>
+          <div className="h-1.5 bg-mint-100 rounded-full overflow-hidden mt-1">
+            <div className="h-full bg-gradient-to-r from-mint-400 to-mint-600 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
           </div>
         </div>
-
-        {/* Mini garden */}
-        <MiniGarden plants={profile.plants} />
-      </div>
-
-      {/* Progress bar */}
-      <div className="relative h-1.5 bg-white/70 rounded-full overflow-hidden mt-2">
-        <div
-          className="h-full bg-gradient-to-r from-mint-400 to-mint-600 rounded-full transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="text-xs text-mint-700 text-right flex-shrink-0">
+          <div className="font-bold text-mint-800">{profile.todaySteps.toLocaleString()}</div>
+          <div>{(profile.todayWater / 1000).toFixed(1)}L · {profile.plants} 🌱</div>
+        </div>
       </div>
     </div>
-  );
-}
-
-function MiniGarden({ plants }) {
-  // Tiny ground with up to 5 small plants
-  const visible = Math.min(plants, 5);
-  const slotW = 8;
-  const startX = 100;
-  return (
-    <svg width="60" height="32" viewBox="0 0 120 32" className="flex-shrink-0" aria-hidden="true">
-      {/* Sky */}
-      <rect x="0" y="0" width="120" height="22" fill="#eaf4ec" />
-      {/* Ground */}
-      <rect x="0" y="22" width="120" height="10" fill="#7bb392" />
-      <ellipse cx="60" cy="24" rx="60" ry="3" fill="#5a9a78" opacity="0.4" />
-      {/* Plants */}
-      {Array.from({ length: visible }).map((_, i) => {
-        const x = startX - (visible - 1 - i) * slotW;
-        return (
-          <g key={i} transform={`translate(${x} 0)`}>
-            <line x1="0" y1="22" x2="0" y2="14" stroke="#5a9a78" strokeWidth="1" />
-            <circle cx="0" cy="13" r="2.5" fill={i % 2 === 0 ? '#fdfcf8' : '#f9a8d4'} />
-          </g>
-        );
-      })}
-      {/* Empty plots */}
-      {Array.from({ length: Math.max(0, 5 - visible) }).map((_, i) => {
-        const x = startX - (Math.max(0, 5 - 1) - i) * slotW - (visible * slotW);
-        return (
-          <g key={`empty-${i}`} transform={`translate(${x} 0)`} opacity="0.4">
-            <rect x="-2" y="20" width="4" height="3" fill="#a4cdb5" rx="1" stroke="#7bb392" strokeWidth="0.5" strokeDasharray="1 1" />
-          </g>
-        );
-      })}
-    </svg>
   );
 }

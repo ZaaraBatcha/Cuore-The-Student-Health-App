@@ -6,6 +6,8 @@ import LogPage from './components/LogPage';
 import CalendarPage from './components/CalendarPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
+import MedicationsPage from './components/MedicationsPage';
+import LogbookPage from './components/LogbookPage';
 import { storage } from './lib/storage';
 
 export default function App() {
@@ -49,13 +51,24 @@ export default function App() {
           onOpenProfile={() => setPage('profile')}
         />
       )}
-      {page === 'log' && <LogPage onLogged={() => setLogsVersion((v) => v + 1)} />}
-      {page === 'calendar' && <CalendarPage />}
+      {page === 'log' && (
+        <LogPage
+          onLogged={() => setLogsVersion((v) => v + 1)}
+          onOpenLogbook={() => setPage('logbook')}
+        />
+      )}
+      {page === 'logbook' && <LogbookPage />}
+            {page === 'calendar' && <CalendarPage />}
+      {page === 'meds' && <MedicationsPage />}
       {page === 'profile' && (
-        <ProfilePage profile={profile} onProfileUpdate={reSurvey} />
+        <ProfilePage
+          profile={profile}
+          onProfileUpdate={reSurvey}
+          onOpenSettings={() => setPage('settings')}
+        />
       )}
       {page === 'settings' && (
-        <SettingsPage profile={profile} />
+        <SettingsPage profile={profile} onProfileSave={(p) => setProfile(p)} />
       )}
     </Layout>
   );

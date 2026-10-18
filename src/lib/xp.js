@@ -29,7 +29,7 @@ export function plantsInGarden(points) {
   return Math.max(0, levelFromPoints(points) - 1);
 }
 
-// Plant species picker — deterministic so each "slot" gets a consistent plant
+// Plant species picker: deterministic so each "slot" gets a consistent plant
 const SPECIES = ['sprout', 'daisy', 'tulip', 'bush', 'sunflower', 'tree', 'mushroom', 'bluebell'];
 
 export function plantSpecies(slotIndex) {

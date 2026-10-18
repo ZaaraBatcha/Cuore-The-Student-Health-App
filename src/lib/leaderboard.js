@@ -1,4 +1,4 @@
-// Leaderboard — multi-profile on a single device.
+// Leaderboard: multi-profile on a single device.
 // This is a demo of how a social layer would work; in production it would
 // talk to a backend. Each profile keeps its own step/water data locally
 // so you can compare with friends who use the same device.
@@ -7,10 +7,10 @@ import { storage } from './storage';
 import { todayKey } from './storage';
 
 const DEFAULT_PROFILES = [
-  { id: 'you',     name: 'You',         emoji: '🌱', isMe: true,  color: '#5a9a78' },
-  { id: 'alex',    name: 'Alex',        emoji: '🌻', isMe: false, color: '#f59e0b' },
-  { id: 'priya',   name: 'Priya',       emoji: '🌼', isMe: false, color: '#ec4899' },
-  { id: 'jordan',  name: 'Jordan',      emoji: '🌳', isMe: false, color: '#7c3aed' },
+  { id: 'you',     name: 'Zaara',       emoji: '🌱', isMe: true,  color: '#5a9a78' },
+  { id: 'alex',    name: 'Aisha',       emoji: '🌻', isMe: false, color: '#f59e0b' },
+  { id: 'priya',   name: 'Clarice',     emoji: '🌼', isMe: false, color: '#ec4899' },
+  { id: 'jordan',  name: 'Alhaam',      emoji: '🌳', isMe: false, color: '#7c3aed' },
 ];
 
 // Synthesize realistic step data for demo profiles (so the leaderboard isn't empty
@@ -32,7 +32,20 @@ function seedStepsForProfile(profileId, dateKey) {
 
 function ensureLeaderboardSeeded() {
   const existing = storage.getLeaderboard();
-  if (existing.length > 0) return existing;
+  if (existing.length > 0) {
+    const namesById = new Map(DEFAULT_PROFILES.map(({ id, name }) => [id, name]));
+    let changed = false;
+    const updated = existing.map((profile) => {
+      const name = namesById.get(profile.id);
+      if (name && profile.name !== name) {
+        changed = true;
+        return { ...profile, name };
+      }
+      return profile;
+    });
+    if (changed) storage.saveLeaderboard(updated);
+    return updated;
+  }
 
   const today = todayKey();
   const seeded = DEFAULT_PROFILES.map((p) => ({

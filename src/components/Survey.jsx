@@ -104,7 +104,7 @@ function NameStep({ data, update }) {
         autoFocus
       />
       <p className="text-xs text-mint-500 text-center mt-3">
-        Just for the greeting — your name stays on your device.
+        Just for the greeting: your name stays on your device.
       </p>
     </div>
   );

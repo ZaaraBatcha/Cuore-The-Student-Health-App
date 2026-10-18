@@ -1,4 +1,4 @@
-// Steps tracker — tries the experimental Generic Sensor API on phones,
+// Steps tracker: tries the experimental Generic Sensor API on phones,
 // falls back to manual entry on desktop / unsupported browsers.
 // Honest about what's a real measurement vs manual input.
 
@@ -19,7 +19,7 @@ export async function tryNativeStepSensor() {
       const result = await navigator.permissions.query({ name: 'accelerometer' });
       if (result.state === 'denied') return null;
     } catch {
-      // Permissions API doesn't know accelerometer — that's fine, try anyway
+      // Permissions API doesn't know accelerometer: that's fine, try anyway
     }
 
     if ('LinearAccelerationSensor' in window) {

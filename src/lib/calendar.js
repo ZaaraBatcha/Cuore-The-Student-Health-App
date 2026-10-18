@@ -1,4 +1,4 @@
-// Calendar helpers — month grid, event matching, reminder lead times
+// Calendar helpers: month grid, event matching, reminder lead times
 
 export const REMINDER_OPTIONS = [
   { id: 'same_day', label: 'Same day', days: 0 },

@@ -1,4 +1,4 @@
-// Minimal ICS (iCalendar) parser — supports VEVENT only.
+// Minimal ICS (iCalendar) parser: supports VEVENT only.
 // Handles the common cases in Google Calendar, Apple Calendar, and Outlook exports.
 // Returns an array of { summary, start (Date), end (Date?), description?, location? }.
 

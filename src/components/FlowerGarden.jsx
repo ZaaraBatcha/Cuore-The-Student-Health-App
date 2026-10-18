@@ -1,8 +1,8 @@
 import { plantSpecies, plantPalette } from '../lib/xp';
 
-// A horizontal "garden view" — a grass patch with plants laid out organically.
+// A horizontal "garden view": a grass patch with plants laid out organically.
 // Each plant appears at a milestone (level). Older plants sit further along the row.
-export default function FlowerGarden({ totalPoints, currentLevel, plantsCount }) {
+export default function FlowerGarden({ totalPoints, currentLevel, plantsCount, compact }) {
   // Layout: garden is 100% wide, ~220px tall
   // Each plant has a stable x-position derived from its index
   const plants = [];
@@ -19,6 +19,12 @@ export default function FlowerGarden({ totalPoints, currentLevel, plantsCount })
       yJitter,
       ageInPlants: plantsCount - 1 - i, // most recent plant is "youngest"
     });
+  }
+
+  // Compact mode: bare scene only. Parent supplies the card, header and
+  // level/points chrome (so they appear in exactly one place on the page).
+  if (compact) {
+    return <GardenScene plants={plants} />;
   }
 
   return (
@@ -106,7 +112,7 @@ function GardenScene({ plants }) {
         );
       })}
 
-      {/* Plants — drawn in order so newer ones appear on top */}
+      {/* Plants: drawn in order so newer ones appear on top */}
       {plants.map((p) => (
         <Plant key={p.key} plant={p} />
       ))}

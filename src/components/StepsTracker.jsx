@@ -1,96 +1,79 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { storage, todayKey } from '../lib/storage';
 import { DAILY_STEP_GOAL, getStepProgress, tryNativeStepSensor } from '../lib/steps';
 import { setProfileSteps } from '../lib/leaderboard';
 
+// Compact step card: one line for value+goal, one thin bar, two quick
+// buttons, and manual entry tucked behind a small "Exact" toggle.
 export default function StepsTracker() {
   const [steps, setSteps] = useState(() => storage.getSteps());
+  const [showExact, setShowExact] = useState(false);
   const [input, setInput] = useState('');
-  const [sensorStatus, setSensorStatus] = useState('checking'); // 'checking' | 'native' | 'unavailable'
 
   const today = todayKey();
   const todaySteps = steps[today] || 0;
   const pct = getStepProgress(steps, today);
 
-  // Try to detect native sensor once on mount.
-  useEffect(() => {
-    let cancelled = false;
-    tryNativeStepSensor().then((sensor) => {
-      if (cancelled) return;
-      setSensorStatus(sensor ? 'native' : 'unavailable');
-    });
-    return () => { cancelled = true; };
-  }, []);
+  // Probe for a native motion sensor quietly (no busy text, keeps UI calm).
+  useState(() => { tryNativeStepSensor(); });
 
-  function handleAdd(delta) {
-    const next = todaySteps + delta;
+  function apply(next) {
     storage.setSteps(today, next);
     setProfileSteps('you', today, next);
     setSteps(storage.getSteps());
   }
 
+  function handleAdd(delta) {
+    apply(todaySteps + delta);
+  }
+
   function handleSet() {
     const n = parseInt(input, 10);
     if (!isNaN(n) && n >= 0) {
-      storage.setSteps(today, n);
-      setProfileSteps('you', today, n);
-      setSteps(storage.getSteps());
+      apply(n);
       setInput('');
+      setShowExact(false);
     }
   }
 
-  const progressColor =
-    pct >= 100 ? 'from-mint-400 via-mint-500 to-mint-700' :
-    pct >= 50  ? 'from-mint-400 to-mint-600' :
-                  'from-mint-300 to-mint-500';
-
   return (
-    <div className="card-mint mb-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-xl">👟</div>
-          <div>
-            <div className="font-bold text-mint-900">Steps</div>
-            <div className="text-xs text-mint-700">
-              Goal: {DAILY_STEP_GOAL.toLocaleString()}
-              {sensorStatus === 'checking' && ' · checking sensor…'}
-              {sensorStatus === 'native' && ' · 🏃 motion sensor available'}
-              {sensorStatus === 'unavailable' && ' · enter manually'}
-            </div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-mint-800">{todaySteps.toLocaleString()}</div>
-          <div className="text-xs text-mint-600">{pct}% of goal</div>
-        </div>
+    <div className="card bg-white border-mint-200 rounded-2xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-mint-900">👟 Steps</span>
+        <span className="text-sm text-mint-700">
+          <span className="font-bold text-mint-900">{todaySteps.toLocaleString()}</span>
+          <span className="text-mint-600"> / {DAILY_STEP_GOAL.toLocaleString()}</span>
+        </span>
       </div>
 
-      <div className="h-3 bg-white/70 rounded-full overflow-hidden shadow-inner mb-3">
+      <div className="h-2 bg-mint-100 rounded-full overflow-hidden mb-2.5">
         <div
-          className={`h-full bg-gradient-to-r ${progressColor} transition-all duration-700 rounded-full`}
+          className="h-full bg-gradient-to-r from-mint-400 to-mint-600 transition-all duration-500 rounded-full"
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1">
-          <button onClick={() => handleAdd(500)} className="btn-secondary text-xs px-3 py-2">+500</button>
-          <button onClick={() => handleAdd(1000)} className="btn-secondary text-xs px-3 py-2">+1k</button>
-          <button onClick={() => handleAdd(2500)} className="btn-secondary text-xs px-3 py-2">+2.5k</button>
-        </div>
-        <div className="flex-1 flex gap-1">
+      {showExact ? (
+        <div className="flex gap-1.5">
           <input
             type="number"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSet()}
-            placeholder="Or type exact…"
-            className="input text-sm py-2"
+            placeholder="Exact steps"
+            className="input text-xs py-1.5"
             min="0"
+            autoFocus
           />
-          <button onClick={handleSet} disabled={input === ''} className="btn-primary text-sm px-4">Set</button>
+          <button onClick={handleSet} className="btn-primary text-xs px-3">Save</button>
+          <button onClick={() => setShowExact(false)} className="btn-secondary text-xs px-2">✕</button>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => handleAdd(500)} className="btn-secondary flex-1 text-xs py-1.5">+500</button>
+          <button onClick={() => setShowExact(true)} className="text-xs text-mint-700 font-medium px-2 py-1.5 hover:underline">Exact</button>
+        </div>
+      )}
     </div>
   );
 }

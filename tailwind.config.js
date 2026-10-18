@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Soft, pastel mint palette — gentle, accessible, low-saturation
+        // Soft, pastel mint palette: gentle, accessible, low-saturation
         mint: {
           50: '#f4faf6',
           100: '#e3f1e8',

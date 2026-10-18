@@ -15,7 +15,7 @@ const TRACK_TYPES = [
 
 const MOOD_TAGS = ['energized', 'tired', 'stressed', 'calm', 'happy', 'anxious', 'focused', 'great'];
 
-export default function LogPage({ onLogged }) {
+export default function LogPage({ onLogged, onOpenLogbook }) {
   const settings = storage.getSettings();
   const voiceEnabled = settings.voiceInput;
   const [type, setType] = useState(TRACK_TYPES[0].id);
@@ -77,7 +77,7 @@ export default function LogPage({ onLogged }) {
 
   return (
     <div>
-      <Header title="➕ Log something" subtitle="Voice or text — your choice." />
+      <Header title="➕ Log something" subtitle="Voice or text: your choice." />
 
       {confirmation && (
         <div className="card-leaf mb-4">
@@ -102,7 +102,7 @@ export default function LogPage({ onLogged }) {
           )}
           {listening ? (
             <button onClick={stopListening} className="btn-secondary w-full animate-pulse">
-              🔴 Listening — tap to stop
+              🔴 Listening: tap to stop
             </button>
           ) : (
             <button onClick={startListening} disabled={!isSpeechRecognitionSupported()} className="btn-primary w-full">
@@ -117,7 +117,7 @@ export default function LogPage({ onLogged }) {
           <label className="label">What are you logging?</label>
           <div className="grid grid-cols-2 gap-2">
             {TRACK_TYPES.map((t) => (
-              <button type="button" key={t.id} onClick={() => setType(t.id)} className={`p-3 rounded-xl border-2 text-left transition-all ${type === t.id ? 'border-mint-500 bg-mint-50' : 'border-mint-100 hover:border-mint-300'}`}>
+              <button type="button" key={t.id} onClick={() => setType(t.id)} className={`p-3 rounded-xl border-2 text-left transition-all shadow-sm ${type === t.id ? 'bg-white border-mint-500' : 'bg-mint-50 border-mint-200 hover:border-mint-300'}`}>
                 <div className="text-2xl mb-1">{t.icon}</div>
                 <div className="text-sm font-medium text-mint-900">{t.label}</div>
               </button>
@@ -130,7 +130,7 @@ export default function LogPage({ onLogged }) {
             <label className="label">How are you feeling?</label>
             <div className="flex flex-wrap gap-2">
               {MOOD_TAGS.map((tag) => (
-                <button type="button" key={tag} onClick={() => setTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag])} className={`chip ${tags.includes(tag) ? 'bg-mint-500 text-white' : ''}`}>
+                <button type="button" key={tag} onClick={() => setTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag])} className={`chip-soft ${tags.includes(tag) ? 'bg-mint-500 text-white border-mint-500' : ''}`}>
                   {tag}
                 </button>
               ))}
@@ -160,6 +160,14 @@ export default function LogPage({ onLogged }) {
           Save log
         </button>
       </form>
+
+      <button
+        onClick={onOpenLogbook}
+        className="btn-secondary w-full mt-3"
+        aria-label="View logbook"
+      >
+        📖 View logbook
+      </button>
     </div>
   );
 }

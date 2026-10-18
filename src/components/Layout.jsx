@@ -40,13 +40,13 @@ function BottomNav({ current, onNavigate }) {
 
 export function Header({ title, subtitle, action }) {
   return (
-    <header className="mb-6 relative">
+    <header className="mb-4 relative">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-mint-900">{title}</h1>
-          {subtitle && <p className="text-mint-600 mt-1">{subtitle}</p>}
+          <h1 className="text-xl font-bold text-mint-900">{title}</h1>
+          {subtitle && <p className="text-sm text-mint-600 mt-0.5">{subtitle}</p>}
         </div>
-        {action}
+        {action && <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">{action}</div>}
       </div>
     </header>
   );

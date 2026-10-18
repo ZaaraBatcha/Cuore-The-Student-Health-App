@@ -1,5 +1,5 @@
-// Speech helpers — voice input (Speech-to-Text) and read-aloud (Text-to-Speech)
-// Both use the browser's built-in Web Speech API — no third-party services.
+// Speech helpers: voice input (Speech-to-Text) and read-aloud (Text-to-Speech)
+// Both use the browser's built-in Web Speech API: no third-party services.
 
 export function isSpeechRecognitionSupported() {
   return typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);

@@ -1,4 +1,4 @@
-// Weather — uses Open-Meteo (no API key, no signup, fully free).
+// Weather: uses Open-Meteo (no API key, no signup, fully free).
 // Falls back gracefully if geolocation is denied or network fails.
 
 const WEATHER_CACHE_KEY = 'wisetrack.weather';
@@ -144,7 +144,7 @@ export function weatherSuggestion(weather) {
   if (tomorrow.high >= 30) {
     return {
       icon: '🥤',
-      text: `Hot tomorrow (${tomorrow.high}°C). Hydrate well before any activity — heat dehydrates fast.`,
+      text: `Hot tomorrow (${tomorrow.high}°C). Hydrate well before any activity: heat dehydrates fast.`,
     };
   }
   if (tomorrow.high <= 5) {
@@ -156,7 +156,7 @@ export function weatherSuggestion(weather) {
   if (tomorrow.rainProb >= 60) {
     return {
       icon: '🌧️',
-      text: `Wet weather tomorrow. A short indoor walk still counts — even 5 laps around your room.`,
+      text: `Wet weather tomorrow. A short indoor walk still counts: even 5 laps around your room.`,
     };
   }
   if (tomorrow.high >= 18 && tomorrow.high <= 26 && tomorrow.rainProb < 30) {

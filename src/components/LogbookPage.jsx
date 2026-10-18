@@ -43,7 +43,7 @@ export default function LogbookPage() {
 
       <div className="space-y-6">
         {Object.entries(grouped).map(([key, group]) => (
-          <DayGroup key={key} dayKey={key} entries={group} conditionId={conditionId} />
+          <DayGroup key={key} dayKey={key} entries={group} />
         ))}
       </div>
 
@@ -54,8 +54,7 @@ export default function LogbookPage() {
   );
 }
 
-function DayGroup({ dayKey, entries, conditionId }) {
-  const condition = conditions[conditionId];
+function DayGroup({ dayKey, entries }) {
   return (
     <section>
       <h2 className="text-sm font-semibold text-mint-500 uppercase tracking-wide mb-2 px-1">
@@ -74,7 +73,7 @@ function LogEntry({ entry }) {
   const meta = TYPE_META[entry.type] || { label: entry.type, icon: '📝' };
   const time = new Date(entry.timestamp);
 
-  // Different card tints per entry type — visual rhythm
+  // Different card tints per entry type: visual rhythm
   const tintClass =
     entry.type === 'meal'    ? 'bg-mint-50 border-mint-200' :
     entry.type === 'mood'    ? 'bg-mint-100/40 border-mint-200' :
@@ -86,7 +85,11 @@ function LogEntry({ entry }) {
   return (
     <div className={`rounded-2xl border shadow-sm p-5 ${tintClass}`}>
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl flex-shrink-0">{meta.icon}</div>
+        <div className="w-10 h-10 rounded-xl bg-mint-50 border border-mint-200 shadow-sm flex items-center justify-center flex-shrink-0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#427d60" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2 mb-1">
             <div className="font-bold text-mint-900">{meta.label}</div>

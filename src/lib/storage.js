@@ -1,4 +1,4 @@
-// LocalStorage helpers — all data lives in the browser for the hackathon
+// LocalStorage helpers: all data lives in the browser for the hackathon
 
 const KEYS = {
   LOGS: 'wisetrack.logs',
@@ -181,8 +181,15 @@ export const storage = {
     const day = storage.getWater()[date] || [];
     return day.reduce((sum, e) => sum + e.ml, 0);
   },
+  // Replace the day's water log with a single entry equal to the exact total
+  setWaterTotal(date, totalMl) {
+    const all = read(KEYS.WATER, {});
+    all[date] = [{ time: new Date().toISOString(), ml: Math.max(0, parseInt(totalMl) || 0) }];
+    write(KEYS.WATER, all);
+    return all;
+  },
 
-  // Leaderboard — multi-profile on this device (demo)
+  // Leaderboard: multi-profile on this device (demo)
   getLeaderboard() {
     return read(KEYS.LEADERBOARD, []);
   },
@@ -196,5 +203,6 @@ export const storage = {
 };
 
 export function todayKey(d = new Date()) {
-  return d.toISOString().slice(0, 10);
+  // Local calendar date (not UTC) so "today" rolls over at the user's midnight.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

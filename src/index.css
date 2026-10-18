@@ -8,7 +8,7 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    @apply bg-mint-50 text-mint-900;
+    @apply bg-mint-100 text-mint-900;
   }
   /* Larger default tap targets for accessibility */
   button, a, input, select, textarea {
@@ -17,12 +17,12 @@
 }
 
 @layer components {
-  /* Base card — white surface with subtle mint border */
+  /* Base card: white surface with subtle mint border */
   .card {
     @apply bg-white rounded-2xl shadow-sm border border-mint-100 p-5;
   }
 
-  /* Tinted card variants — same shape, different soft mint backgrounds */
+  /* Tinted card variants: same shape, different soft mint backgrounds */
   .card-mint   { @apply bg-mint-50 border-mint-200 rounded-2xl shadow-sm p-5; }
   .card-leaf   { @apply bg-mint-100 border-mint-200 rounded-2xl shadow-sm p-5; }
   .card-fresh  { @apply bg-gradient-to-br from-mint-50 to-white border-mint-200 rounded-2xl shadow-sm p-5; }

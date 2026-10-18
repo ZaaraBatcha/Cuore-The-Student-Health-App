@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { storage, todayKey } from '../lib/storage';
 import { XP_RULES, levelFromPoints } from '../lib/xp';
-import { MEDICATION_LIBRARY, findMedication } from '../data/medicationLibrary';
+import { HABIT_PRESETS } from '../data/habitPresets';
+import { getHabitStreaks } from '../lib/habits';
 import DocumentsSection from './DocumentsSection';
 import { Header } from './Layout';
 
@@ -25,8 +26,6 @@ const PILL_COLORS = [
 export default function MedicationsPage() {
   const [, setRefresh] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
-  const [search, setSearch] = useState('');
-  const [searchResult, setSearchResult] = useState(null);
   const meds = storage.getMedications();
   const medLogs = storage.getMedLogs();
   const today = todayKey();
@@ -34,14 +33,11 @@ export default function MedicationsPage() {
 
   const missedToday = meds.filter((m) => todayTaken[m.id] === false);
   const missedHistory = getRecentMisses(meds, medLogs);
+  const streaks = Object.keys(todayTaken).length > 0 || meds.length > 0 ? getHabitStreaks(medLogs) : {};
 
-  function handleSearch(e) {
-    e?.preventDefault?.();
-    if (!search.trim()) {
-      setSearchResult(null);
-      return;
-    }
-    setSearchResult(findMedication(search));
+  function addPreset(preset) {
+    storage.addMedication({ ...preset });
+    setRefresh((n) => n + 1);
   }
 
   function toggleTaken(medId, taken) {
@@ -76,35 +72,26 @@ export default function MedicationsPage() {
         }
       />
 
-      {/* Documents vault — scan or upload notes and letters */}
-      <DocumentsSection />
-
-      {/* Habit lookup — search for a vitamin/supplement to see what it does */}
-      <div className="card mb-4 bg-mint-50 border-mint-200">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xl">📜</span>
-          <div className="text-xs uppercase tracking-wide font-semibold text-mint-600">
-            What does this do?
-          </div>
+      {/* One-tap habit presets */}
+      <div className="card-mint mb-4">
+        <div className="text-xs uppercase tracking-wide font-semibold text-mint-600 mb-2">⚡ Quick add a habit</div>
+        <div className="flex flex-wrap gap-2">
+          {HABIT_PRESETS.map((p) => (
+            <button key={p.name} onClick={() => addPreset(p)} className="chip hover:bg-mint-100">
+              {p.icon} {p.name}
+            </button>
+          ))}
         </div>
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); if (searchResult) setSearchResult(null); }}
-            placeholder="Type a name (e.g. Vitamin D)"
-            className="input flex-1"
-          />
-          <button type="submit" className="btn-primary px-5 flex-shrink-0">Look up</button>
-        </form>
-
-        {searchResult && <MedicationInfo med={searchResult} />}
-        {search && searchResult === null && (
-          <p className="text-sm text-mint-600 mt-3 leading-relaxed">
-            We don't have plain-English info for "{search}" yet. Try another spelling, or check with your pharmacist.
-          </p>
-        )}
+        <p className="text-xs text-mint-500 mt-2">
+          One tap adds it to your daily list. For anything else, tap ➕ above.
+        </p>
       </div>
+
+      {/* Water snapshot: small daily reminder, shares data with the Today page */}
+      <WaterCheck />
+
+      {/* Documents vault: scan or upload notes and letters */}
+      <DocumentsSection />
 
       {missedToday.length > 0 && (
         <div className="card mb-4 border-clay-400/40 bg-clay-400/5">
@@ -141,6 +128,7 @@ export default function MedicationsPage() {
               <MedCard
                 key={med.id}
                 med={med}
+                streak={streaks[med.id] || 0}
                 taken={!!todayTaken[med.id]}
                 onToggle={(v) => toggleTaken(med.id, v)}
                 onRemove={() => remove(med.id)}
@@ -154,7 +142,7 @@ export default function MedicationsPage() {
   );
 }
 
-function MedCard({ med, taken, onToggle, onRemove }) {
+function MedCard({ med, streak, taken, onToggle, onRemove }) {
   const color = PILL_COLORS.find((c) => c.id === med.color) || PILL_COLORS[0];
   const tintClass =
     taken === true ? 'bg-gradient-to-br from-mint-100 to-mint-50 border-mint-300' :
@@ -167,10 +155,13 @@ function MedCard({ med, taken, onToggle, onRemove }) {
           className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 border-2 shadow-sm"
           style={{ backgroundColor: color.hex, borderColor: color.hex }}
         >
-          💊
+          {med.icon || '💊'}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-mint-900">{med.name}</div>
+          <div className="font-bold text-mint-900">
+            {med.name}
+            {streak >= 2 && <span className="chip ml-2 text-xs align-middle">🔥 {streak}-day streak</span>}
+          </div>
           <div className="text-sm text-mint-700">{med.dosage} · {med.shape}</div>
           {med.schedule && (
             <div className="text-xs text-mint-600 mt-1">{med.schedule}</div>
@@ -202,58 +193,6 @@ function MedCard({ med, taken, onToggle, onRemove }) {
   );
 }
 
-function MedicationInfo({ med }) {
-  return (
-    <div className="mt-4 pt-4 border-t border-mint-200">
-      <div className="font-semibold text-mint-900 text-lg mb-1">{med.names[0]}</div>
-      {med.names.length > 1 && (
-        <div className="text-xs text-mint-500 mb-3">Also known as: {med.names.slice(1).join(', ')}</div>
-      )}
-
-      <div className="space-y-3 mt-3">
-        <InfoRow icon="🎯" label="What it's for" text={med.for} />
-        <InfoRow icon="⏰" label="How to take it" text={med.howToTake} />
-        <InfoRow
-          icon="🙂"
-          label="Common side effects"
-          items={med.commonEffects}
-        />
-        <InfoRow
-          icon="📞"
-          label="Call your doctor if"
-          items={med.callDoctorIf}
-          tone="clay"
-        />
-      </div>
-
-      <p className="text-xs text-mint-500 mt-4 leading-relaxed">
-        This is general info, not medical advice. Always follow your care team's instructions.
-      </p>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, text, items, tone }) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wide font-semibold text-mint-600 mb-1">
-        <span className="mr-1">{icon}</span>{label}
-      </div>
-      {text && <p className="text-sm text-mint-800 leading-relaxed">{text}</p>}
-      {items && (
-        <ul className="text-sm text-mint-800 leading-relaxed space-y-1">
-          {items.map((item, i) => (
-            <li key={i} className={`flex gap-2 ${tone === 'clay' ? 'text-clay-600' : ''}`}>
-              <span className={tone === 'clay' ? 'text-clay-500' : 'text-mint-500'}>•</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 function getRecentMisses(meds, medLogs) {
   const dates = Object.keys(medLogs).sort().slice(0, 7);
   let count = 0;
@@ -264,6 +203,46 @@ function getRecentMisses(meds, medLogs) {
     });
   });
   return count;
+}
+
+function WaterCheck({ onLogged }) {
+  const [, setTick] = useState(0);
+  const today = todayKey();
+  const total = storage.getWaterTotal(today);
+  const GOAL = 2000;
+  const pct = Math.min(100, Math.round((total / GOAL) * 100));
+
+  function add(ml) {
+    storage.addWater(todayKey(), ml);
+    setTick((n) => n + 1);
+    if (onLogged) onLogged();
+  }
+
+  return (
+    <div className="card mb-4 bg-mint-50 border-mint-200">
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-medium text-mint-900 text-sm">💧 Water today</div>
+        <div className="text-sm text-mint-700 font-semibold">
+          {(total / 1000).toFixed(1)}L / {(GOAL / 1000).toFixed(0)}L
+        </div>
+      </div>
+      <div className="h-2 bg-white rounded-full overflow-hidden mb-2">
+        <div
+          className="h-full bg-gradient-to-r from-mint-400 to-mint-600 transition-all duration-500 rounded-full"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {pct >= 100 ? (
+        <p className="text-xs text-mint-600 mt-1">✅ Fully hydrated: nicely done.</p>
+      ) : (
+        <div className="flex gap-2">
+          <button onClick={() => add(250)} className="btn-secondary flex-1 text-xs py-2">+250ml</button>
+          <button onClick={() => add(500)} className="btn-secondary flex-1 text-xs py-2">+500ml</button>
+          <span className="text-xs text-mint-500 self-center px-1">also tracked on Today</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MedForm({ onClose, onSaved }) {
@@ -301,7 +280,7 @@ function MedForm({ onClose, onSaved }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Metformin"
+              placeholder="e.g. Vitamin D"
               className="input"
               autoFocus
             />

@@ -1,4 +1,4 @@
-// Profile option sets — used in the survey and stored alongside the user profile
+// Profile option sets: used in the survey and stored alongside the user profile
 
 export const AGE_RANGES = [
   { id: 'under_18', label: 'Under 18', min: 0, max: 17 },

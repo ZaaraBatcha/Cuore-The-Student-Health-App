@@ -1,4 +1,4 @@
-// Medical document vault — stores uploaded images in IndexedDB so they persist
+// Medical document vault: stores uploaded images in IndexedDB so they persist
 // without needing a server. Images stay on the user's device only.
 
 const DB_NAME = 'wisetrack.documents';
@@ -54,7 +54,7 @@ export async function getAllDocuments() {
     const req = store.getAll();
     req.onsuccess = () => {
       const docs = (req.result || []).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      // Strip the blob from the list to keep it light — fetch full blob on demand
+      // Strip the blob from the list to keep it light: fetch full blob on demand
       resolve(docs.map(({ blob, ...rest }) => rest));
     };
     req.onerror = () => reject(req.error);
@@ -89,7 +89,7 @@ export function normalizeFile(file) {
   const mime = file.type || 'image/jpeg';
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
   if (!allowed.includes(mime)) {
-    // Last resort — still accept, treat as octet-stream so we can store it
+    // Last resort: still accept, treat as octet-stream so we can store it
     return { blob: file, mimeType: 'application/octet-stream' };
   }
   return { blob: file, mimeType: mime };

@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { storage } from '../lib/storage';
+import {
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  speak,
+} from '../lib/speech';
+import { FITNESS_LEVELS } from '../data/profileOptions';
 import { Header } from './Layout';
 
-export default function SettingsPage({ profile, onProfileUpdate }) {
+export default function SettingsPage({ profile, onProfileSave }) {
   const [settings, setSettings] = useState(() => storage.getSettings());
+  const speechRecognitionSupported = isSpeechRecognitionSupported();
+  const speechSynthesisSupported = isSpeechSynthesisSupported();
 
   function update(key, value) {
     storage.setSettings({ [key]: value });
@@ -46,29 +54,18 @@ export default function SettingsPage({ profile, onProfileUpdate }) {
     <div>
       <Header title="⚙️ Settings" subtitle="Your data, your way." />
 
-      {profile && (
-        <div className="card mb-4">
-          <div className="flex items-baseline justify-between mb-3">
-            <div className="font-semibold text-mint-900">Profile</div>
-            <button onClick={onProfileUpdate} className="text-sm text-mint-600 font-medium">
-              Edit
-            </button>
-          </div>
-          <div className="text-sm text-mint-700 space-y-1">
-            <div>👋 <strong>{profile.name}</strong></div>
-            {profile.weight && <div>⚖️ Weight: {profile.weight} {profile.weightUnit || 'kg'}</div>}
-            {profile.heightCm && <div>📏 Height: {profile.heightCm} cm</div>}
-            {profile.fitnessLevel && <div>💪 Activity: {profile.fitnessLevel}</div>}
-          </div>
-        </div>
-      )}
+      {profile && <ProfileEditor profile={profile} onProfileSave={onProfileSave} />}
 
       <div className="card mb-4">
         <div className="font-semibold text-mint-900 mb-3">Accessibility</div>
 
         <ToggleRow
-          label="🎙️ Voice input for logging"
-          description="Speak instead of typing when you log entries or notes."
+          label="🎙️ Speech-to-text"
+          description={
+            speechRecognitionSupported
+              ? 'Enable voice input when adding a log. Your browser may ask for microphone permission.'
+              : 'Speech recognition is not supported by this browser. Try a browser such as Chrome.'
+          }
           checked={settings.voiceInput}
           onChange={(v) => update('voiceInput', v)}
         />
@@ -76,11 +73,21 @@ export default function SettingsPage({ profile, onProfileUpdate }) {
         <div className="my-3 border-t border-mint-100" />
 
         <ToggleRow
-          label="🔊 Read-aloud on insights"
-          description="Reads screen content out loud for accessibility."
+          label="🔊 Text-to-speech"
+          description="Read log confirmations and supported insights aloud."
           checked={settings.readAloud}
           onChange={(v) => update('readAloud', v)}
         />
+        {settings.readAloud && (
+          <button
+            type="button"
+            onClick={() => speak('Text to speech is on. Cuore can read supported content aloud.')}
+            disabled={!speechSynthesisSupported}
+            className="btn-secondary w-full text-sm disabled:cursor-not-allowed"
+          >
+            {speechSynthesisSupported ? '🔊 Test speech' : 'Text-to-speech is not supported in this browser'}
+          </button>
+        )}
       </div>
 
       <div className="card mb-4">
@@ -99,10 +106,112 @@ export default function SettingsPage({ profile, onProfileUpdate }) {
       </div>
 
       <p className="text-xs text-mint-500 text-center mt-6 leading-relaxed">
-        Wise Track is a personal tool, not a substitute for medical or professional advice.
-        Always follow your care team's guidance.
+        Cuore is a personal wellbeing tool, not a substitute for medical or professional advice.
       </p>
     </div>
+  );
+}
+
+function ProfileEditor({ profile, onProfileSave }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(profile.name || '');
+  const [weight, setWeight] = useState(profile.weight ?? '');
+  const [heightCm, setHeightCm] = useState(profile.heightCm ?? '');
+  const [fitnessLevel, setFitnessLevel] = useState(profile.fitnessLevel || 'moderate');
+
+  function save(e) {
+    e.preventDefault();
+    const w = parseFloat(weight);
+    const h = parseFloat(heightCm);
+    const updated = {
+      ...profile,
+      name: name.trim() || profile.name,
+      weight: isNaN(w) ? (profile.weight ?? null) : w,
+      heightCm: isNaN(h) ? (profile.heightCm ?? null) : h,
+      fitnessLevel,
+    };
+    storage.setProfile(updated);
+    if (onProfileSave) onProfileSave(updated);
+    setEditing(false);
+  }
+
+  if (!editing) {
+    return (
+      <div className="card mb-4">
+        <div className="flex items-baseline justify-between mb-3">
+          <div className="font-semibold text-mint-900">Profile</div>
+          <button onClick={() => setEditing(true)} className="text-sm text-mint-600 font-medium hover:underline">
+            Edit
+          </button>
+        </div>
+        <div className="text-sm text-mint-700 space-y-1">
+          <div>👋 <strong>{profile.name}</strong></div>
+          {profile.weight && <div>⚖️ Weight: {profile.weight} {profile.weightUnit || 'kg'}</div>}
+          {profile.heightCm && <div>📏 Height: {profile.heightCm} cm</div>}
+          {profile.fitnessLevel && (
+            <div>💪 Activity: {(FITNESS_LEVELS.find((f) => f.id === profile.fitnessLevel) || {}).label || profile.fitnessLevel}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={save} className="card mb-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <div className="font-semibold text-mint-900">Edit profile</div>
+        <button type="button" onClick={() => setEditing(false)} className="text-sm text-mint-600 font-medium">
+          Cancel
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="label">Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input"
+            autoFocus
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Weight (kg)</label>
+            <input
+              type="number"
+              min="0"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="input"
+            />
+          </div>
+          <div>
+            <label className="label">Height (cm)</label>
+            <input
+              type="number"
+              min="0"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
+              className="input"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="label">Activity level</label>
+          <select value={fitnessLevel} onChange={(e) => setFitnessLevel(e.target.value)} className="input">
+            {FITNESS_LEVELS.map((f) => (
+              <option key={f.id} value={f.id}>{f.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" className="btn-primary w-full mt-4">Save changes</button>
+    </form>
   );
 }
 
@@ -119,13 +228,13 @@ function ToggleRow({ label, description, checked, onChange }) {
         role="switch"
         aria-checked={checked}
         aria-label={label}
-        className={`relative w-14 h-7 rounded-full transition-colors flex-shrink-0 mt-1 ${
-          checked ? 'bg-mint-500' : 'bg-mint-200'
+        className={`relative w-12 h-7 rounded-full shadow-inner transition-all duration-200 flex-shrink-0 mt-1 min-h-0 ${
+          checked ? 'bg-gradient-to-r from-mint-400 to-mint-600' : 'bg-mint-200'
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${
-            checked ? 'translate-x-7' : 'translate-x-0'
+          className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${
+            checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
       </button>

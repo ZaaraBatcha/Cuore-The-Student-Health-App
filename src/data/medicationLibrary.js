@@ -25,7 +25,7 @@ export const MEDICATION_LIBRARY = [
     for: 'High blood pressure and heart protection. It relaxes your blood vessels so your heart does not have to work as hard.',
     howToTake: 'Once a day, with or without food. Try to take it at the same time each day.',
     commonEffects: [
-      'Dry cough (very common — tell your doctor if it bothers you)',
+      'Dry cough (very common: tell your doctor if it bothers you)',
       'Mild dizziness when standing up quickly',
       'Headache',
     ],
@@ -102,7 +102,7 @@ export const MEDICATION_LIBRARY = [
     id: 'omeprazole',
     names: ['Omeprazole', 'Prilosec'],
     for: 'Acid reflux, heartburn, and stomach ulcers. It lowers the amount of acid your stomach makes.',
-    howToTake: 'Once a day before breakfast. Swallow the capsule whole — do not crush.',
+    howToTake: 'Once a day before breakfast. Swallow the capsule whole: do not crush.',
     commonEffects: [
       'Mild headache',
       'Stomach upset',
