@@ -7,10 +7,13 @@ import {
 } from '../lib/speech';
 import {
   clearKey,
+  getUserKey,
   getVoiceId,
   hasBuiltInKey,
   hasKey,
   hasUserKey,
+  isKeyShape,
+  KEY_LENGTH,
   listVoices,
   saveKey,
   saveVoiceId,
@@ -234,6 +237,9 @@ function VoiceCard() {
   // When this build ships a default key, the voice controls are usable with no setup.
   const builtIn = hasBuiltInKey();
   const active = saved || builtIn;
+  // A key saved before the length check existed can be the wrong shape.
+  const storedKey = getUserKey();
+  const storedKeyIgnored = storedKey.length > 0 && !isKeyShape(storedKey);
   const [voices, setVoices] = useState([]);
   const [voiceId, setVoiceId] = useState(() => getVoiceId());
   const [manualId, setManualId] = useState('');
@@ -243,8 +249,11 @@ function VoiceCard() {
   function persist(e) {
     e.preventDefault();
     const trimmed = keyInput.trim();
-    if (trimmed.length <= 20) {
-      setStatus({ kind: 'error', text: 'That does not look like a full ElevenLabs key.' });
+    if (!isKeyShape(trimmed)) {
+      setStatus({
+        kind: 'error',
+        text: `That key is ${trimmed.length} characters, and ElevenLabs keys are ${KEY_LENGTH} (sk_ plus 48). Their API rejects any other length, so check you copied the whole key with nothing added.`,
+      });
       return;
     }
     saveKey(trimmed);
@@ -325,6 +334,13 @@ function VoiceCard() {
       {status && (
         <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${status.kind === 'error' ? 'text-clay-600 bg-clay-400/10' : 'text-mint-700 bg-mint-100'}`}>
           {status.text}
+        </div>
+      )}
+
+      {storedKeyIgnored && (
+        <div className="text-sm text-clay-600 bg-clay-400/10 px-3 py-2 rounded-lg mb-3">
+          A key saved earlier in this browser is {storedKey.length} characters, and ElevenLabs keys are {KEY_LENGTH}, so it is being ignored.
+          Paste your key again below and it will replace it.
         </div>
       )}
 

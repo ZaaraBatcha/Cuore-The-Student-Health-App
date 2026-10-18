@@ -28,7 +28,16 @@ export const FALLBACK_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
 const TTS_MODELS = ['eleven_flash_v2_5', 'eleven_multilingual_v2'];
 let workingModel = null;
 
-// The key the person pasted in Settings, if any.
+// ElevenLabs API keys are "sk_" plus 48 characters, 51 in total. Their API
+// rejects anything else with "API key must be exactly 51 characters", so we
+// check the shape ourselves and never send a key that cannot work.
+export const KEY_LENGTH = 51;
+
+export function isKeyShape(key) {
+  return typeof key === 'string' && key.length === KEY_LENGTH && key.startsWith('sk_');
+}
+
+// The key the person pasted in Settings, if any (raw, even if the shape is wrong).
 export function getUserKey() {
   try {
     return localStorage.getItem(KEY_STORE) || '';
@@ -38,8 +47,12 @@ export function getUserKey() {
 }
 
 // The key actually used: your own key wins, the build default fills the gap.
+// Anything that is not a valid key shape is ignored rather than sent.
 export function getKey() {
-  return getUserKey() || BUILT_IN_KEY;
+  const user = getUserKey();
+  if (isKeyShape(user)) return user;
+  if (isKeyShape(BUILT_IN_KEY)) return BUILT_IN_KEY;
+  return '';
 }
 
 export function saveKey(key) {
@@ -58,19 +71,18 @@ export function clearKey() {
   }
 }
 
-// True when this build ships with a default key.
+// True when this build ships with a usable default key.
 export function hasBuiltInKey() {
-  return BUILT_IN_KEY.length > 20;
+  return isKeyShape(BUILT_IN_KEY);
 }
 
-// True when the person has pasted their own key.
+// True when the person has pasted their own usable key.
 export function hasUserKey() {
-  return getUserKey().length > 20;
+  return isKeyShape(getUserKey());
 }
 
-// A real key is long; guard against accidental partial pastes.
 export function hasKey() {
-  return getKey().length > 20;
+  return getKey().length > 0;
 }
 
 export function getVoiceId() {
@@ -104,6 +116,9 @@ function friendlyError(status, detail = {}) {
   const message = detail.message || '';
   const state = detail.status || '';
   const code = detail.code || '';
+  if (/exactly 51 characters/i.test(message)) {
+    return 'That key is the wrong length. ElevenLabs API keys are 51 characters (sk_ plus 48). Copy the key again from the ElevenLabs dashboard.';
+  }
   if (state === 'missing_permissions') {
     return `${message || 'This key is missing a permission.'} Enable it on the key in your ElevenLabs dashboard.`;
   }

@@ -96,6 +96,8 @@ cp .env.example .env
 
 Restart the dev server after editing `.env` (it is read at startup, not hot-reloaded). Anyone can still override that default by pasting their own key in **Settings → AI voice**, which is stored in their browser only and wins over the default.
 
+ElevenLabs keys are 51 characters (`sk_` plus 48). Cuore checks that shape before using a key, so a wrong-length paste is rejected in Settings with an explanation instead of failing halfway through a demo, and a bad key found in `.env` is ignored rather than sent.
+
 Two warnings. `.env` is gitignored, so the key stays off GitHub. But `.env` values are baked into the JavaScript bundle at build time, so a deployed build exposes whatever key it was built with: for a public deployment, ship with an empty key and let each visitor paste their own.
 
 ## 📂 Project layout
