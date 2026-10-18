@@ -1,5 +1,14 @@
 // Speech helpers: voice input (Speech-to-Text) and read-aloud (Text-to-Speech)
-// Both use the browser's built-in Web Speech API: no third-party services.
+//
+// Two engines are available:
+//   1. ElevenLabs (optional). Used when a key is saved in Settings.
+//   2. The browser's built-in Web Speech API. The default, and the fallback
+//      whenever no key is present or an ElevenLabs request fails.
+//
+// The day-agent stays entirely on-device either way; this file only handles
+// voice in and voice out.
+
+import { hasKey, elevenSpeak } from './elevenlabs';
 
 export function isSpeechRecognitionSupported() {
   return typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
@@ -7,6 +16,11 @@ export function isSpeechRecognitionSupported() {
 
 export function isSpeechSynthesisSupported() {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+// True when the ElevenLabs layer should be preferred over the browser voice.
+export function isElevenLabsVoiceActive() {
+  return hasKey();
 }
 
 export function createSpeechRecognition({ onResult, onError, onEnd } = {}) {
@@ -28,7 +42,21 @@ export function createSpeechRecognition({ onResult, onError, onEnd } = {}) {
   return rec;
 }
 
+// Read text aloud. Uses ElevenLabs when a key is saved, otherwise the
+// browser's built-in voice. Returns nothing for callers to await; failures
+// fall back silently so a dead network never blocks the app.
 export function speak(text, { rate = 0.95, pitch = 1 } = {}) {
+  if (!text) return;
+  if (hasKey()) {
+    elevenSpeak(text).then((played) => {
+      if (!played) browserSpeak(text, { rate, pitch });
+    });
+    return;
+  }
+  browserSpeak(text, { rate, pitch });
+}
+
+function browserSpeak(text, { rate = 0.95, pitch = 1 } = {}) {
   if (!isSpeechSynthesisSupported() || !text) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
@@ -44,50 +72,3 @@ export function stopSpeaking() {
   }
 }
 
-// Parse voice input like "140 glucose" or "blood pressure 130 over 85"
-export function parseLogFromSpeech(text, condition) {
-  const lowered = text.toLowerCase().trim();
-  const result = { type: null, value: null, note: text };
-
-  // Try to find a number (with optional slash or "over" for BP)
-  const bpMatch = lowered.match(/(\d{2,3})\s*(?:over|\/)\s*(\d{2,3})/);
-  const numMatch = lowered.match(/\b(\d{2,3})\b/);
-
-  if (condition === 'diabetes') {
-    if (lowered.includes('glucose') || lowered.includes('sugar') || lowered.includes('reading')) {
-      result.type = 'glucose';
-      result.value = numMatch ? numMatch[1] : null;
-    } else if (lowered.includes('meal') || lowered.includes('ate') || lowered.includes('eat') || lowered.includes('had')) {
-      result.type = 'meal';
-      result.note = text;
-    } else if (lowered.includes('feel') || lowered.includes('mood')) {
-      result.type = 'mood';
-      result.note = text.replace(/^(i feel|i'm|im)\s*/i, '');
-    } else if (lowered.includes('walk') || lowered.includes('exercise') || lowered.includes('activity')) {
-      result.type = 'activity';
-      result.note = text;
-    } else if (numMatch) {
-      result.type = 'glucose';
-      result.value = numMatch[1];
-    }
-  } else if (condition === 'hypertension') {
-    if (bpMatch) {
-      result.type = 'bp';
-      result.value = `${bpMatch[1]}/${bpMatch[2]}`;
-    } else if (lowered.includes('pressure') || lowered.includes('bp')) {
-      result.type = 'bp';
-      result.value = numMatch ? numMatch[1] : null;
-    } else if (lowered.includes('meal') || lowered.includes('ate') || lowered.includes('eat') || lowered.includes('had')) {
-      result.type = 'meal';
-      result.note = text;
-    } else if (lowered.includes('feel') || lowered.includes('mood')) {
-      result.type = 'mood';
-      result.note = text.replace(/^(i feel|i'm|im)\s*/i, '');
-    } else if (lowered.includes('walk') || lowered.includes('exercise') || lowered.includes('activity')) {
-      result.type = 'activity';
-      result.note = text;
-    }
-  }
-
-  return result;
-}

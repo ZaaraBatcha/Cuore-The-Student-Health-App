@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { storage } from '../lib/storage';
 import { XP_RULES, levelFromPoints } from '../lib/xp';
 import { Header } from './Layout';
-import { createSpeechRecognition, isSpeechRecognitionSupported, speak } from '../lib/speech';
+import {
+  createSpeechRecognition,
+  isSpeechRecognitionSupported,
+  isElevenLabsVoiceActive,
+  speak,
+} from '../lib/speech';
+import { isRecordingSupported, startRecording, transcribe } from '../lib/elevenlabs';
 
 const TRACK_TYPES = [
   { id: 'mood',     label: 'Mood',      icon: '💭' },
@@ -18,14 +24,18 @@ const MOOD_TAGS = ['energized', 'tired', 'stressed', 'calm', 'happy', 'anxious',
 export default function LogPage({ onLogged, onOpenLogbook }) {
   const settings = storage.getSettings();
   const voiceEnabled = settings.voiceInput;
+  const elevenLabsMode = isElevenLabsVoiceActive();
+  const voiceAvailable = elevenLabsMode ? isRecordingSupported() : isSpeechRecognitionSupported();
   const [type, setType] = useState(TRACK_TYPES[0].id);
   const [note, setNote] = useState('');
   const [tags, setTags] = useState([]);
   const [voiceError, setVoiceError] = useState(null);
-  const [listening, setListening] = useState(false);
+  const [voicePhase, setVoicePhase] = useState('idle'); // idle | listening | recording | transcribing
   const [confirmation, setConfirmation] = useState(null);
   const [recognition, setRecognition] = useState(null);
+  const recorderRef = useRef(null);
 
+  // Browser engine: live transcript from SpeechRecognition.
   function startListening() {
     setVoiceError(null);
     const rec = createSpeechRecognition({
@@ -35,22 +45,64 @@ export default function LogPage({ onLogged, onOpenLogbook }) {
       },
       onError: (err) => {
         setVoiceError(`Couldn't hear that: ${err}. Try again.`);
-        setListening(false);
+        setVoicePhase('idle');
       },
-      onEnd: () => setListening(false),
+      onEnd: () => setVoicePhase('idle'),
     });
     if (!rec) {
       setVoiceError('Voice input not supported in this browser. Try Chrome.');
       return;
     }
     setRecognition(rec);
-    setListening(true);
+    setVoicePhase('listening');
     rec.start();
   }
 
-  function stopListening() {
-    if (recognition) recognition.stop();
-    setListening(false);
+  // ElevenLabs engine: record a clip, then send it to Scribe.
+  async function startRecordingClip() {
+    setVoiceError(null);
+    try {
+      recorderRef.current = await startRecording();
+      setVoicePhase('recording');
+    } catch (e) {
+      setVoiceError(
+        e && e.name === 'NotAllowedError'
+          ? 'Microphone permission was blocked. Allow it in your browser and try again.'
+          : `Could not start recording: ${e.message}`
+      );
+      setVoicePhase('idle');
+    }
+  }
+
+  async function stopRecordingClip() {
+    const recorder = recorderRef.current;
+    recorderRef.current = null;
+    if (!recorder) {
+      setVoicePhase('idle');
+      return;
+    }
+    const blob = await recorder.stop();
+    setVoicePhase('transcribing');
+    try {
+      const text = await transcribe(blob);
+      setNote(text);
+      if (settings.readAloud) speak('Saved your note.');
+    } catch (e) {
+      setVoiceError(e.message || 'Transcription failed. Try again.');
+    } finally {
+      setVoicePhase('idle');
+    }
+  }
+
+  function startVoice() {
+    if (elevenLabsMode) startRecordingClip();
+    else startListening();
+  }
+
+  function stopVoice() {
+    if (voicePhase === 'recording') stopRecordingClip();
+    else if (recognition) recognition.stop();
+    setVoicePhase(voicePhase === 'recording' ? 'transcribing' : 'idle');
   }
 
   function submit(e) {
@@ -92,7 +144,7 @@ export default function LogPage({ onLogged, onOpenLogbook }) {
         <div className="card-leaf">
           <div className="flex items-center justify-between mb-2">
             <div className="font-medium text-mint-900">🎙️ Voice input</div>
-            {!isSpeechRecognitionSupported() && (
+            {!voiceAvailable && (
               <span className="text-xs text-mint-600">Not supported here</span>
             )}
           </div>
@@ -100,15 +152,30 @@ export default function LogPage({ onLogged, onOpenLogbook }) {
           {voiceError && (
             <div className="text-sm text-clay-600 mb-3 bg-clay-400/10 px-3 py-2 rounded-lg">{voiceError}</div>
           )}
-          {listening ? (
-            <button onClick={stopListening} className="btn-secondary w-full animate-pulse">
+          {voicePhase === 'recording' ? (
+            <button onClick={stopVoice} className="btn-secondary w-full animate-pulse">
+              🔴 Recording: tap to stop
+            </button>
+          ) : voicePhase === 'listening' ? (
+            <button onClick={stopVoice} className="btn-secondary w-full animate-pulse">
               🔴 Listening: tap to stop
             </button>
+          ) : voicePhase === 'transcribing' ? (
+            <button disabled className="btn-secondary w-full opacity-70">
+              ✍️ Transcribing with ElevenLabs...
+            </button>
           ) : (
-            <button onClick={startListening} disabled={!isSpeechRecognitionSupported()} className="btn-primary w-full">
+            <button onClick={startVoice} disabled={!voiceAvailable} className="btn-primary w-full">
               🎙️ Tap to speak
             </button>
           )}
+          <p className="text-[11px] text-mint-500 mt-2 text-center">
+            {elevenLabsMode
+              ? 'Transcribed by ElevenLabs Scribe. Your key stays in this browser.'
+              : isSpeechRecognitionSupported()
+                ? "Using your browser's built-in speech. Add an ElevenLabs key in Settings for studio voices."
+                : 'Voice input needs a browser with speech recognition, such as Chrome.'}
+          </p>
         </div>
       )}
 

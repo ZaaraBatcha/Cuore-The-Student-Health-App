@@ -70,7 +70,8 @@ Voice input & read-aloud (toggleable in Settings), large tap targets, calm high-
 - **Tailwind CSS v3**: the mint/cream calm design system
 - **localStorage + IndexedDB**: all personal data stays on-device (IndexedDB for documents/images)
 - **Open-Meteo**: free, keyless weather for the adaptive rules
-- **Web Speech API**: browser-native voice input & read-aloud
+- **Web Speech API**: browser-native voice input & read-aloud, the default
+- **ElevenLabs (optional)**: studio voices and Scribe transcription when you paste your own key in Settings (free plans can use Sarah, Adam and Daniel; library voices such as Rachel need credits)
 - **Generic Sensor API**: best-effort step motion detection on phones
 
 ## 🏃 Run it
@@ -81,6 +82,21 @@ npm run dev
 ```
 
 Start it in Chrome (voice features need Chromium or local HTTPS), open the printed URL: usually `http://localhost:5173`.
+
+### Optional: ElevenLabs by default
+
+Cuore works with no configuration: voice input and read-aloud use the browser's built-in Web Speech API, and nobody is asked for a key to use the app.
+
+If you want ElevenLabs active out of the box (for a demo, say), copy the example file and paste a key:
+
+```bash
+cp .env.example .env
+# then edit .env and set VITE_ELEVENLABS_API_KEY
+```
+
+Restart the dev server after editing `.env` (it is read at startup, not hot-reloaded). Anyone can still override that default by pasting their own key in **Settings → AI voice**, which is stored in their browser only and wins over the default.
+
+Two warnings. `.env` is gitignored, so the key stays off GitHub. But `.env` values are baked into the JavaScript bundle at build time, so a deployed build exposes whatever key it was built with: for a public deployment, ship with an empty key and let each visitor paste their own.
 
 ## 📂 Project layout
 
@@ -95,6 +111,8 @@ src/
     storage.js         : localStorage keys & helpers
     weather.js         : Open-Meteo fetch/caching
     insights.js        : weekly patterns & Pattern Mirror
+    speech.js          : voice in/out, picks ElevenLabs or the browser voice
+    elevenlabs.js      : optional ElevenLabs voices + Scribe (key pasted in Settings)
   data/
     studentDay.js      : default student schedule
     habitPresets.js    : one-tap habit library
@@ -107,3 +125,5 @@ See `DECISIONS.md` for the full scope and every design decision we made.
 - **Leaderboard** runs on-device: profiles live on the same machine for demo (a server version is architecture-ready, not built).
 - **Steps** are manual-entry with a motion-sensor probe where the browser allows; phone-native step sync (HealthKit / Google Fit) needs a native wrapper.
 - **The agent** is rules-based, not a large language model: deterministic by choice so it never hallucinates a plan at you and works without internet.
+- **Voice is the one optional cloud touch**: with no key the browser speaks and listens locally; with a key (pasted in Settings, or supplied as a build default through `.env`) voice notes are transcribed by ElevenLabs Scribe. A key pasted inside the app lives in that browser only and is never committed.
+- **A build-time key is public**: if `.env` holds a key when you run `npm run build`, that key is readable inside the bundle. Deploy with an empty key and let visitors paste their own.

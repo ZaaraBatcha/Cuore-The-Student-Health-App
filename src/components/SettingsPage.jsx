@@ -5,6 +5,17 @@ import {
   isSpeechSynthesisSupported,
   speak,
 } from '../lib/speech';
+import {
+  clearKey,
+  getVoiceId,
+  hasBuiltInKey,
+  hasKey,
+  hasUserKey,
+  listVoices,
+  saveKey,
+  saveVoiceId,
+  elevenSpeak,
+} from '../lib/elevenlabs';
 import { FITNESS_LEVELS } from '../data/profileOptions';
 import { Header } from './Layout';
 
@@ -44,6 +55,7 @@ export default function SettingsPage({ profile, onProfileSave }) {
   function wipeAll() {
     if (confirm('This will erase all your data. Are you sure?')) {
       if (confirm('Really sure? This cannot be undone.')) {
+        clearKey();
         storage.clearAll();
         window.location.reload();
       }
@@ -58,12 +70,11 @@ export default function SettingsPage({ profile, onProfileSave }) {
 
       <div className="card mb-4">
         <div className="font-semibold text-mint-900 mb-3">Accessibility</div>
-
         <ToggleRow
           label="🎙️ Speech-to-text"
           description={
-            speechRecognitionSupported
-              ? 'Enable voice input when adding a log. Your browser may ask for microphone permission.'
+            speechRecognitionSupported || hasKey()
+              ? 'Enable voice input when adding a log. Uses your ElevenLabs key when one is saved, otherwise your browser speech engine. Your browser may ask for microphone permission.'
               : 'Speech recognition is not supported by this browser. Try a browser such as Chrome.'
           }
           checked={settings.voiceInput}
@@ -82,13 +93,15 @@ export default function SettingsPage({ profile, onProfileSave }) {
           <button
             type="button"
             onClick={() => speak('Text to speech is on. Cuore can read supported content aloud.')}
-            disabled={!speechSynthesisSupported}
+            disabled={!speechSynthesisSupported && !hasKey()}
             className="btn-secondary w-full text-sm disabled:cursor-not-allowed"
           >
-            {speechSynthesisSupported ? '🔊 Test speech' : 'Text-to-speech is not supported in this browser'}
+            {speechSynthesisSupported || hasKey() ? '🔊 Test speech' : 'Text-to-speech is not supported in this browser'}
           </button>
         )}
       </div>
+
+      <VoiceCard />
 
       <div className="card mb-4">
         <div className="font-semibold text-mint-900 mb-3">Your data</div>
@@ -212,6 +225,205 @@ function ProfileEditor({ profile, onProfileSave }) {
 
       <button type="submit" className="btn-primary w-full mt-4">Save changes</button>
     </form>
+  );
+}
+
+function VoiceCard() {
+  const [keyInput, setKeyInput] = useState('');
+  const [saved, setSaved] = useState(() => hasUserKey());
+  // When this build ships a default key, the voice controls are usable with no setup.
+  const builtIn = hasBuiltInKey();
+  const active = saved || builtIn;
+  const [voices, setVoices] = useState([]);
+  const [voiceId, setVoiceId] = useState(() => getVoiceId());
+  const [manualId, setManualId] = useState('');
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  function persist(e) {
+    e.preventDefault();
+    const trimmed = keyInput.trim();
+    if (trimmed.length <= 20) {
+      setStatus({ kind: 'error', text: 'That does not look like a full ElevenLabs key.' });
+      return;
+    }
+    saveKey(trimmed);
+    setKeyInput('');
+    setSaved(true);
+    setStatus({ kind: 'ok', text: 'Key saved on this device only. Try the voice test below.' });
+  }
+
+  function forget() {
+    clearKey();
+    setSaved(false);
+    setVoices([]);
+    setStatus({
+      kind: 'ok',
+      text: hasBuiltInKey()
+        ? 'Your key was removed. The demo key built into this app is back in use.'
+        : 'Key removed. Cuore is back to the browser voice.',
+    });
+  }
+
+  async function loadVoices() {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const list = await listVoices();
+      setVoices(list);
+      if (list.length && !list.some((v) => v.id === voiceId)) {
+        saveVoiceId(list[0].id);
+        setVoiceId(list[0].id);
+      }
+      setStatus({ kind: 'ok', text: `Loaded ${list.length} voices from your account.` });
+    } catch (e) {
+      setStatus({ kind: 'error', text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function testVoice() {
+    setBusy(true);
+    setStatus(null);
+    try {
+      await elevenSpeak('Hi, this is your Cuore voice. Logs and reminders can read like this.', { silent: false });
+      setStatus({ kind: 'ok', text: 'That was the ElevenLabs voice.' });
+    } catch (e) {
+      setStatus({ kind: 'error', text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function pickVoice(id) {
+    saveVoiceId(id);
+    setVoiceId(id);
+  }
+
+  // Fallback for keys that cannot list voices, or for a voice the user already knows.
+  function useManualId() {
+    const id = manualId.trim();
+    if (!id) return;
+    saveVoiceId(id);
+    setVoiceId(id);
+    setManualId('');
+    setStatus({ kind: 'ok', text: 'Voice ID saved. Press "Test ElevenLabs voice" to hear it.' });
+  }
+
+  return (
+    <div className="card mb-4">
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="font-semibold text-mint-900">🎧 AI voice</div>
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">OPTIONAL</span>
+      </div>
+      <p className="text-sm text-mint-600 mb-3 leading-relaxed">
+        Add your own ElevenLabs key to use studio voices for read-aloud and Scribe for voice notes.
+        Without a key Cuore uses the browser speech engine, so everything still works offline.
+      </p>
+
+      {status && (
+        <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${status.kind === 'error' ? 'text-clay-600 bg-clay-400/10' : 'text-mint-700 bg-mint-100'}`}>
+          {status.text}
+        </div>
+      )}
+
+      {active ? (
+        <div className="space-y-3">
+          <div className="text-sm text-mint-800 flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">✓</span>
+            <span>
+              {saved
+                ? 'Your key is saved. It stays in this browser and is left out of backups.'
+                : 'Using the demo key built into this app. Paste your own key below to override it.'}
+            </span>
+          </div>
+
+          <div>
+            <label className="label">Voice</label>
+            <div className="flex gap-2">
+              <select
+                value={voiceId}
+                onChange={(e) => pickVoice(e.target.value)}
+                disabled={voices.length === 0}
+                className="input flex-1"
+              >
+                {voices.length === 0 ? (
+                  <option value={voiceId}>Load voices to choose one</option>
+                ) : (
+                  voices.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))
+                )}
+              </select>
+              <button type="button" onClick={loadVoices} disabled={busy} className="btn-secondary text-sm whitespace-nowrap">
+                {busy ? 'Working...' : 'Load voices'}
+              </button>
+            </div>
+          </div>
+
+          <button type="button" onClick={testVoice} disabled={busy} className="btn-primary w-full text-sm">
+            🔊 Test ElevenLabs voice
+          </button>
+
+          <div>
+            <label className="label">Or paste a voice ID</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualId}
+                onChange={(e) => setManualId(e.target.value)}
+                placeholder="EXAVITQu4vr4xnSDxMaL"
+                className="input flex-1"
+                autoComplete="off"
+              />
+              <button type="button" onClick={useManualId} disabled={!manualId.trim()} className="btn-secondary text-sm whitespace-nowrap">
+                Use
+              </button>
+            </div>
+            <p className="text-[11px] text-mint-500 mt-1 leading-relaxed">
+              Useful when the key cannot list voices. On a free plan Sarah, Adam and Daniel work; library voices such as Rachel need credits.
+            </p>
+          </div>
+
+          {saved ? (
+            <button type="button" onClick={forget} className="btn-secondary w-full text-sm text-clay-600">
+              Remove key
+            </button>
+          ) : (
+            <form onSubmit={persist} className="space-y-2 border-t border-mint-100 pt-3">
+              <label className="label">Use your own key instead</label>
+              <input
+                type="password"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="sk_..."
+                className="input"
+                autoComplete="off"
+              />
+              <button type="submit" className="btn-primary w-full text-sm">Save key</button>
+            </form>
+          )}
+        </div>
+      ) : (
+        <form onSubmit={persist} className="space-y-2">
+          <label className="label">ElevenLabs API key</label>
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder="sk_..."
+            className="input"
+            autoComplete="off"
+          />
+          <button type="submit" className="btn-primary w-full text-sm">Save key</button>
+          <p className="text-[11px] text-mint-500 leading-relaxed">
+            Voice notes are sent to ElevenLabs to be transcribed. Everything else in Cuore, including the
+            day-agent, stays on this device.
+          </p>
+        </form>
+      )}
+    </div>
   );
 }
 

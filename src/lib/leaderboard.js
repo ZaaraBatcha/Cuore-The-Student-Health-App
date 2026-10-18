@@ -7,7 +7,7 @@ import { storage } from './storage';
 import { todayKey } from './storage';
 
 const DEFAULT_PROFILES = [
-  { id: 'you',     name: 'Zaara',       emoji: '🌱', isMe: true,  color: '#5a9a78' },
+  { id: 'you',     name: 'You',         emoji: '🌱', isMe: true,  color: '#5a9a78' },
   { id: 'alex',    name: 'Aisha',       emoji: '🌻', isMe: false, color: '#f59e0b' },
   { id: 'priya',   name: 'Clarice',     emoji: '🌼', isMe: false, color: '#ec4899' },
   { id: 'jordan',  name: 'Alhaam',      emoji: '🌳', isMe: false, color: '#7c3aed' },
@@ -31,9 +31,15 @@ function seedStepsForProfile(profileId, dateKey) {
 }
 
 function ensureLeaderboardSeeded() {
+  // The "you" row always mirrors the name the student gave in the survey,
+  // so a fresh install never shows someone else's name.
+  const userProfile = storage.getProfile();
+  const myName = (userProfile && userProfile.name && userProfile.name.trim()) || 'You';
+
   const existing = storage.getLeaderboard();
   if (existing.length > 0) {
     const namesById = new Map(DEFAULT_PROFILES.map(({ id, name }) => [id, name]));
+    namesById.set('you', myName);
     let changed = false;
     const updated = existing.map((profile) => {
       const name = namesById.get(profile.id);
@@ -50,7 +56,10 @@ function ensureLeaderboardSeeded() {
   const today = todayKey();
   const seeded = DEFAULT_PROFILES.map((p) => ({
     ...p,
-    stepsByDate: { [today]: seedStepsForProfile(p.id, today) },
+    name: p.id === 'you' ? myName : p.name,
+    // Your own row starts empty and fills from your real steps. Only the
+    // friends get synthesized numbers so the board is not blank.
+    stepsByDate: { [today]: p.id === 'you' ? 0 : seedStepsForProfile(p.id, today) },
   }));
   storage.saveLeaderboard(seeded);
   return seeded;

@@ -8,8 +8,9 @@ export default function FlowerGarden({ totalPoints, currentLevel, plantsCount, c
   const plants = [];
   for (let i = 0; i < plantsCount; i++) {
     const species = plantSpecies(i);
-    // X position: spread across the garden, deterministic
-    const x = 8 + ((i * 13 + 7) % 84); // 8–92% of width
+    // X position: spread across the garden, deterministic.
+    // Slot 0 lands dead centre (a lone plant should be the hero of the scene).
+    const x = 4 + ((i * 13 + 46) % 92); // 4–96% of width
     // Y position: organic variation
     const yJitter = ((i * 31) % 7) - 3; // small up/down
     plants.push({
@@ -138,27 +139,32 @@ function Plant({ plant }) {
   const palette = plantPalette(plant.species);
   const cx = (plant.x / 100) * 500;
   const baseY = 175 + plant.yJitter;
-
-  switch (plant.species) {
-    case 'sprout':
-      return <Sprout cx={cx} baseY={baseY} palette={palette} />;
-    case 'daisy':
-      return <Daisy cx={cx} baseY={baseY} palette={palette} />;
-    case 'tulip':
-      return <Tulip cx={cx} baseY={baseY} palette={palette} />;
-    case 'sunflower':
-      return <Sunflower cx={cx} baseY={baseY} palette={palette} />;
-    case 'bush':
-      return <Bush cx={cx} baseY={baseY} palette={palette} />;
-    case 'tree':
-      return <Tree cx={cx} baseY={baseY} palette={palette} />;
-    case 'mushroom':
-      return <Mushroom cx={cx} baseY={baseY} palette={palette} />;
-    case 'bluebell':
-      return <Bluebell cx={cx} baseY={baseY} palette={palette} />;
-    default:
-      return <Sprout cx={cx} baseY={baseY} palette={palette} />;
-  }
+  // Scale up about the base so the plant grows upward out of the soil
+  const inner = (() => {
+    switch (plant.species) {
+      case 'daisy':
+        return <Daisy cx={cx} baseY={baseY} palette={palette} />;
+      case 'tulip':
+        return <Tulip cx={cx} baseY={baseY} palette={palette} />;
+      case 'sunflower':
+        return <Sunflower cx={cx} baseY={baseY} palette={palette} />;
+      case 'bush':
+        return <Bush cx={cx} baseY={baseY} palette={palette} />;
+      case 'tree':
+        return <Tree cx={cx} baseY={baseY} palette={palette} />;
+      case 'mushroom':
+        return <Mushroom cx={cx} baseY={baseY} palette={palette} />;
+      case 'bluebell':
+        return <Bluebell cx={cx} baseY={baseY} palette={palette} />;
+      default:
+        return <Sprout cx={cx} baseY={baseY} palette={palette} />;
+    }
+  })();
+  return (
+    <g transform={`translate(${cx} ${baseY}) scale(1.5) translate(${-cx} ${-baseY})`}>
+      {inner}
+    </g>
+  );
 }
 
 function Sprout({ cx, baseY, palette }) {

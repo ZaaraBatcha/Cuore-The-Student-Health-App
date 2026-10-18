@@ -30,7 +30,8 @@ export function plantsInGarden(points) {
 }
 
 // Plant species picker: deterministic so each "slot" gets a consistent plant
-const SPECIES = ['sprout', 'daisy', 'tulip', 'bush', 'sunflower', 'tree', 'mushroom', 'bluebell'];
+// Flowers first: the first plant a student ever grows should look like a flower.
+const SPECIES = ['daisy', 'tulip', 'sunflower', 'sprout', 'bush', 'tree', 'mushroom', 'bluebell'];
 
 export function plantSpecies(slotIndex) {
   return SPECIES[slotIndex % SPECIES.length];
@@ -40,7 +41,7 @@ export function plantSpecies(slotIndex) {
 export function plantPalette(species) {
   switch (species) {
     case 'sprout':
-      return { name: 'Sprout', emoji: '🌱', stem: '#7bb392', accent: '#5a9a78' };
+      return { name: 'Sprout', emoji: '🌱', stem: '#427d60', accent: '#427d60' };
     case 'daisy':
       return { name: 'Daisy', emoji: '🌼', stem: '#7bb392', petal: '#fdfcf8', center: '#fde68a', accent: '#fbcfe8' };
     case 'tulip':
