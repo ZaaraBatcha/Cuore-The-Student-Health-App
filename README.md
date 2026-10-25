@@ -1,131 +1,155 @@
-# Cuore 🌿
+# Cuore - The Student Health App
 
-*Your wellbeing, growing every day.*
+A calm, social wellbeing web app designed for university students, built for the **Starting University** society track of the IKU Womxn in STEM Hackathon.
 
-A calm, social wellbeing web app built for **university students**, made for the **Society track: Starting University** of the Womxn in STEM Hackathon.
+## Problem Definition
 
----
+Starting university can make it difficult to balance academic responsibilities with personal wellbeing. Many health apps assume users already have established routines or specific health conditions, rather than addressing the challenges faced by students adjusting to university life.
 
-## 🎯 Problem definition
+Cuore makes wellbeing more engaging and social by allowing friends to track their steps, complete daily tasks, and grow virtual gardens together. It turns everyday activities such as walking, staying hydrated, and maintaining routines into simple, interactive experiences that fit around student life.
 
-University students, especially new students during their transition period, often experience burnout and struggle to manage both academics and their personal well-being. Generic health apps assume you already have a routine: or a chronic condition to manage. Nothing speaks to a fresher juggling timetables, flat-sharing, labs and coursework.
+## Features
 
-**Cuore makes health fun and social** by letting friends connect and compete on step leaderboards to see who can take more steps, complete the most tasks, and grow the best garden. Everything you take care of yourself with: steps, water, routines: becomes something you'd actually open between lectures, not another chore.
+### Personal Garden
 
----
+Daily goals contribute to the growth of a personal virtual garden. Flowers grow as goals are completed, providing a visual overview of progress throughout the week without penalising missed routines.
 
-## ✨ What it does
+### Social Step Leaderboard
 
-### 🌱 A garden that grows with you
-Every goal you hit plants and grows a flower in your personal garden. Skip the routine, and the garden quietly reflects it. It's your week at a glance: no shame, just life.
+Users can compare daily step counts with friends. Each profile displays step progress, water intake, and a miniature version of their personal garden, connecting wellbeing achievements with social interaction.
 
-### 🏆 A social step leaderboard
-Friends compete on today's steps. Every profile shows their steps, water level, and a **miniaturised version of their garden**: the garden *is* the profile picture of your progress.
+### Step and Water Tracking
 
-### 👟 Steps & 💧 Water, without the friction
-A daily step goal (8,000) and hydration goal (2L) with one-tap logging. Step data syncs toward the phone's motion sensors where the browser supports them, and stays manual everywhere else: honest about what's measured and what's entered.
+Users can track their daily steps against an 8,000-step goal and water intake against a 2-litre goal. Both can be logged manually, while step detection can use motion sensors where supported by the browser and device.
 
-### 🤖 An AI day-agent that adapts to *you*
-The heart of Cuore. A fully on-device agent re-plans your day as **new stream data, changing priorities, or corrected assumptions arrive**:
+### Adaptive Day Agent
 
-| The moment | What Cuore does |
+Cuore includes a deterministic, on-device day agent that adapts daily plans as new information, changing priorities, and corrected entries become available.
+
+| Situation | Agent response |
 |---|---|
-| Your water is behind pace by the afternoon | Inserts a *hydration catch-up* into today's plan |
-| Your steps are behind pace | Adds a *step catch-up walk* at 17:30 |
-| Rain is forecast | Physically moves your walk earlier: *"the plan adapts before the weather does"* |
-| A calendar event lands | Adds prep time: *your calendar takes priority, the routine shifts around it* |
-| You correct an entry (delete a water log, fix a step count) | Re-checks your pace and cancels plans made on stale assumptions |
-| You un-tick a completed task | Respects it: and adds a *"gentle 5-min version"* instead of pretending it never happened |
+| Water intake falls behind schedule | Adds a hydration catch-up task |
+| Step count falls behind target | Schedules a catch-up walk for 17:30 |
+| Rain is forecast | Moves the planned walk to an earlier time |
+| A calendar event is added | Allocates preparation time and adjusts the routine |
+| A logged entry is corrected or deleted | Recalculates progress and removes outdated recommendations |
+| A completed task is unchecked | Suggests a shorter, more manageable version of the task |
 
-Every decision appears in a visible **"🤖 Adaptations today"** feed with its reason: the agent never silently changes your plan. It's deterministic, auditable, needs no API keys, and works offline.
+All adaptations appear in a visible **Adaptations Today** feed, explaining why each change was made. The agent uses predefined rules rather than a large language model, making its decisions transparent, predictable, and usable offline.
 
-### 📅 Calendar with month & week views
-Timetable screenshot? Import real .ics files (university systems export these), add your own events, set reminder lead-times, and switch to the expandable **week view** when a day is busy.
+### Calendar and Scheduling
 
-### 💊 Daily habits (presets & streaks)
-One-tap habit presets: take vitamins, 8-h sleep, morning stretch, no phone before bed, journal, tidy study space. Each habit builds a 🔥 streak that's honestly broken by a missed day.
+Users can import university timetables through `.ics` files, create personal events, configure reminder lead times, and switch between monthly and expandable weekly calendar views.
 
-### ➕ Log (voice or text) & 📔 Logbook
-Log moods, meals, activity, study or sleep by typing or speaking. Entry types become a diary view, tagged by day. The **Pattern Mirror** reads your week back as one sentence: e.g. *"You feel better on days you move your body."*
+### Daily Habits
 
-### 📁 My files
-Scan or upload GP letters (ready for uni extenuating-circumstances forms), lab reports, and lecture notes. Stored on-device only.
+Users can choose from preset habits, including taking vitamins, maintaining a consistent sleep routine, stretching, journaling, and organising their study space. Streaks track consecutive days of completion and reset when a day is missed.
 
-### ♿ Accessibility built in
-Voice input & read-aloud (toggleable in Settings), large tap targets, calm high-contrast mint palette.
+### Voice and Text Logging
 
----
+Users can record moods, meals, physical activity, study sessions, and sleep through text or voice input. Entries are organised by date in a personal logbook.
 
-## 🧠 How we meet the brief
+The Pattern Mirror summarises potential weekly trends in a single sentence, helping users reflect on connections between their routines and wellbeing.
 
-- **Real problem, personally experienced**: managing wellbeing during the university transition: drawn straight from our own first-year experience.
-- **Adaptive AI agent**: the day-agent answers the "adapts intelligently" challenge directly, with the feed as proof.
-- **Honest by design**: we label device-demo over fake cloud claims, determinism over hand-waving, and never claim medical advice.
+### Personal File Storage
 
----
+Users can upload or store documents such as GP letters, lab reports, and lecture notes. Files are stored locally on the device using IndexedDB, rather than being uploaded to a Cuore server.
 
-## 🛠 Stack
+### Accessibility
 
-- **Vite + React**: fast build, minimal footprint
-- **Tailwind CSS v3**: the mint/cream calm design system
-- **localStorage + IndexedDB**: all personal data stays on-device (IndexedDB for documents/images)
-- **Open-Meteo**: free, keyless weather for the adaptive rules
-- **Web Speech API**: browser-native voice input & read-aloud, the default
-- **ElevenLabs (optional)**: studio voices and Scribe transcription when you paste your own key in Settings (free plans can use Sarah, Adam and Daniel; library voices such as Rachel need credits)
-- **Generic Sensor API**: best-effort step motion detection on phones
+Cuore includes optional voice input and read-aloud functionality, large interactive elements, and a high-contrast mint and cream colour scheme.
 
-## 🏃 Run it
+## How Cuore Meets the Hackathon Brief
+
+- **Relevant problem:** Addresses the challenges of maintaining wellbeing while adjusting to university life, informed by our own first-year experiences.
+- **Adaptive agent:** Uses a responsive day-planning system that adjusts routines based on new information and changing circumstances.
+- **Transparent decisions:** Explains each adaptation through a visible activity feed.
+- **Privacy-conscious design:** Stores personal data locally and avoids unnecessary backend services.
+- **Honest implementation:** Clearly distinguishes between implemented features, device-dependent capabilities, and features that would require further development.
+
+## Technology Stack
+
+- **React and Vite:** Frontend framework and development tooling.
+- **Tailwind CSS v3:** Styling and consistent visual design.
+- **localStorage and IndexedDB:** Local storage for application data and documents.
+- **Open-Meteo:** Weather forecasts used by the adaptive day agent.
+- **Web Speech API:** Browser-native speech recognition and text-to-speech where supported.
+- **ElevenLabs (optional):** Alternative voice generation and Scribe transcription when a user supplies an API key.
+- **Generic Sensor API:** Experimental, best-effort motion detection on supported devices and browsers.
+
+## Getting Started
+
+### Installation
+
+Install the project dependencies:
 
 ```bash
 npm install
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-Start it in Chrome (voice features need Chromium or local HTTPS), open the printed URL: usually `http://localhost:5173`.
+Open the local URL displayed in the terminal, usually:
 
-### Optional: ElevenLabs by default
+`http://localhost:5173`
 
-Cuore works with no configuration: voice input and read-aloud use the browser's built-in Web Speech API, and nobody is asked for a key to use the app.
+Chrome or another compatible browser is recommended. Voice functionality depends on browser support and may require a secure context, such as localhost or HTTPS.
 
-If you want ElevenLabs active out of the box (for a demo, say), copy the example file and paste a key:
+### Optional ElevenLabs Configuration
+
+Cuore works without an API key. By default, voice input and read-aloud use the browser's built-in Web Speech API.
+
+To configure ElevenLabs as the default voice provider for a local demo, copy the example environment file:
 
 ```bash
 cp .env.example .env
-# then edit .env and set VITE_ELEVENLABS_API_KEY
 ```
 
-Restart the dev server after editing `.env` (it is read at startup, not hot-reloaded). Anyone can still override that default by pasting their own key in **Settings → AI voice**, which is stored in their browser only and wins over the default.
+Add your API key to `.env`:
 
-ElevenLabs keys are 51 characters (`sk_` plus 48). Cuore checks that shape before using a key, so a wrong-length paste is rejected in Settings with an explanation instead of failing halfway through a demo, and a bad key found in `.env` is ignored rather than sent.
-
-Two warnings. `.env` is gitignored, so the key stays off GitHub. But `.env` values are baked into the JavaScript bundle at build time, so a deployed build exposes whatever key it was built with: for a public deployment, ship with an empty key and let each visitor paste their own.
-
-## 📂 Project layout
-
+```bash
+VITE_ELEVENLABS_API_KEY=your_api_key_here
 ```
+
+Restart the development server after changing the environment file. Users can also provide their own key through **Settings → AI Voice**, which takes priority over the build-time default.
+
+Cuore validates the expected key format before attempting to use it. Invalid keys are rejected or ignored rather than used for requests.
+
+**Security note:** Environment variables prefixed with `VITE_` are included in the client-side JavaScript bundle during the build. Therefore, any key supplied through this method can be exposed in a deployed application. Keep `.env` out of version control, deploy public builds without a default API key, and let users supply their own keys where appropriate.
+
+## Project Structure
+
+```text
 src/
-  App.jsx              : app shell & navigation
-  components/          : Today, Habits, Log, Calendar, Profile, AgentFeed, …
+  App.jsx                 # Application shell and navigation
+  components/             # Main screens and reusable components
   lib/
-    agent.js           : the adaptive day agent (6 rules + feed events)
-    habits.js          : habit streaks
-    leaderboard.js     : device-social step ranking
-    storage.js         : localStorage keys & helpers
-    weather.js         : Open-Meteo fetch/caching
-    insights.js        : weekly patterns & Pattern Mirror
-    speech.js          : voice in/out, picks ElevenLabs or the browser voice
-    elevenlabs.js      : optional ElevenLabs voices + Scribe (key pasted in Settings)
+    agent.js               # Adaptive planning rules and event feed
+    habits.js              # Habit tracking and streaks
+    leaderboard.js         # Local step leaderboard
+    storage.js             # Local storage utilities
+    weather.js              # Weather fetching and caching
+    insights.js             # Weekly patterns and Pattern Mirror
+    speech.js               # Voice input and output
+    elevenlabs.js            # Optional ElevenLabs integration
   data/
-    studentDay.js      : default student schedule
-    habitPresets.js    : one-tap habit library
+    studentDay.js           # Default student schedule
+    habitPresets.js          # Preset habit library
 ```
 
-See `DECISIONS.md` for the full scope and every design decision we made.
+See `DECISIONS.md` for the project's design decisions and implementation scope.
 
-## ⚠️ Honest limitations
+## Limitations
 
-- **Leaderboard** runs on-device: profiles live on the same machine for demo (a server version is architecture-ready, not built).
-- **Steps** are manual-entry with a motion-sensor probe where the browser allows; phone-native step sync (HealthKit / Google Fit) needs a native wrapper.
-- **The agent** is rules-based, not a large language model: deterministic by choice so it never hallucinates a plan at you and works without internet.
-- **Voice is the one optional cloud touch**: with no key the browser speaks and listens locally; with a key (pasted in Settings, or supplied as a build default through `.env`) voice notes are transcribed by ElevenLabs Scribe. A key pasted inside the app lives in that browser only and is never committed.
-- **A build-time key is public**: if `.env` holds a key when you run `npm run build`, that key is readable inside the bundle. Deploy with an empty key and let visitors paste their own.
+- **Leaderboard:** Profiles and rankings are stored locally, so social competition is limited to the same device. A shared server-based leaderboard has not been implemented.
+- **Step tracking:** Manual entry is supported, with best-effort motion detection on compatible devices. Direct integration with Apple Health or Google Fit would require additional platform-specific implementation.
+- **Adaptive agent:** The agent uses deterministic rules rather than a large language model. This makes its behaviour predictable and transparent, but limits its ability to interpret complex situations.
+- **Voice features:** Browser-native speech functionality depends on device and browser support. ElevenLabs provides optional cloud-based voice services when configured with a valid API key.
+- **Data storage:** Personal data and documents are stored locally in the browser. They are not automatically synchronised across devices or backed up to a Cuore server.
+- **API key security:** Any key embedded in a public client-side build can be extracted. Public deployments should not include a private API key.
+
+Cuore aims to make everyday wellbeing more manageable, social, and adaptable for students starting university.
