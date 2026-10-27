@@ -1,5 +1,7 @@
 # Cuore - The Student Health App
 
+Website: https://mycuore.netlify.app/
+
 A calm, social wellbeing web app designed for university students, built for the **Starting University** society track of the IKU Womxn in STEM Hackathon.
 
 ## Problem Definition
@@ -22,11 +24,11 @@ Users can compare daily step counts with friends. Each profile displays step pro
 
 Users can track their daily steps against an 8,000-step goal and water intake against a 2-litre goal. Both can be logged manually, while step detection can use motion sensors where supported by the browser and device.
 
-### Adaptive Day Agent
+### Adaptive Day Agent (in development) 
 
 Cuore includes a deterministic, on-device day agent that adapts daily plans as new information, changing priorities, and corrected entries become available.
 
-| Situation | Agent response |
+| Situation | Agent response (in development) |
 |---|---|
 | Water intake falls behind schedule | Adds a hydration catch-up task |
 | Step count falls behind target | Schedules a catch-up walk for 17:30 |
